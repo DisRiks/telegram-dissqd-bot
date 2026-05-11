@@ -1301,7 +1301,7 @@ async def leak_plugin_motd_rw_handler(callback: CallbackQuery) -> None:
         await callback.message.answer(caption + "\n\nФайл пока не добавлен.")
     
     builder = back_button("back_to_leak_plugins")
-    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leaks_plugins").as_markup())
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_plugins").as_markup())
     await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
@@ -1321,11 +1321,11 @@ async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
             caption=caption,
             protect_content=True,
         )
-        await callback.message.answer("⬇️ Скачать ещё:", reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
+        await callback.message.answer("⬇️ Скачать ещё:", reply_markup=back_button("back_to_leak_resourcepacks").as_markup())
     else:
         await callback.message.answer(
             "❌ Файл пока не добавлен.",
-            reply_markup=back_button("back_to_leaks_resourcepacks").as_markup()
+            reply_markup=back_button("back_to_leak_resourcepacks").as_markup()
         )
 
 
