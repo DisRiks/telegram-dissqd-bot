@@ -712,11 +712,14 @@ async def help_find_product_handler(callback: CallbackQuery) -> None:
 
 @dp.callback_query(F.data == "back_to_main")
 async def back_to_main_handler(callback: CallbackQuery) -> None:
+    try:
+        await callback.answer()
+    except Exception:
+        pass
     await callback.message.answer(
         WELCOME_TEXT,
         reply_markup=start_menu(is_admin=is_admin(callback.from_user.id))
     )
-    await callback.answer()
 
 @dp.callback_query(F.data == "back_to_build_variants")
 async def back_to_build_variants_handler(callback: CallbackQuery) -> None:
