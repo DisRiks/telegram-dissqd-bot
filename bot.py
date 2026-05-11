@@ -1321,12 +1321,8 @@ async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
             caption=caption,
             protect_content=True,
         )
-        await callback.message.answer("⬇️ Скачать ещё:", reply_markup=back_button("back_to_leak_resourcepacks").as_markup())
     else:
-        await callback.message.answer(
-            "❌ Файл пока не добавлен.",
-            reply_markup=back_button("back_to_leak_resourcepacks").as_markup()
-        )
+        await callback.message.answer("❌ Файл пока не добавлен.")
 
 
 @dp.callback_query(F.data == "leaks_resourcepacks")
