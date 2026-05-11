@@ -1306,23 +1306,24 @@ async def leak_plugin_motd_rw_handler(callback: CallbackQuery) -> None:
 
 @dp.callback_query(F.data == "leak_resourcepack_rw")
 async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
+    await callback.answer()
     log_user_activity(callback, "open_leak_resourcepack_rw")
-    
+
     archive_path = FREE_DIR / "RWRPDISSQD.zip"
     caption = "Оригинальный РесурсПак RW."
-    
+
     if archive_path.exists():
         await callback.message.answer_document(
             document=FSInputFile(archive_path),
             caption=caption,
             protect_content=True,
         )
+        await callback.message.answer("🔙 Назад", reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
     else:
-        await callback.message.answer("Файл пока не добавлен.")
-    
-    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
-    
-    await callback.answer()
+        await callback.message.answer(
+            "Файл пока не добавлен.",
+            reply_markup=back_button("back_to_leaks_resourcepacks").as_markup()
+        )
 
 
 @dp.callback_query(F.data == "leaks_resourcepacks")
