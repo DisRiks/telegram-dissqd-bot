@@ -1318,22 +1318,22 @@ async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
             caption=caption,
             protect_content=True,
         )
-        await callback.message.answer("🔙 Назад", reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
+        await callback.message.answer("⬇️ Скачать ещё:", reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
     else:
         await callback.message.answer(
-            "Файл пока не добавлен.",
+            "❌ Файл пока не добавлен.",
             reply_markup=back_button("back_to_leaks_resourcepacks").as_markup()
         )
 
 
 @dp.callback_query(F.data == "leaks_resourcepacks")
 async def leaks_resourcepacks_handler(callback: CallbackQuery) -> None:
+    await callback.answer()
     log_user_activity(callback, "open_leaks_resourcepacks")
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Выберите РесурсПак для скачивания:",
         reply_markup=leak_resourcepack_variants_menu(),
     )
-    await callback.answer()
 
 
 @dp.callback_query(F.data == "leak_map_spawn_reallyworld")
