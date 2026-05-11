@@ -14,6 +14,7 @@ from aiohttp.client_exceptions import ClientConnectorError
 from aiogram.exceptions import TelegramNetworkError
 from aiogram.filters import CommandStart, Command
 from aiogram.types import CallbackQuery, FSInputFile, InputMediaPhoto, LabeledPrice, Message, PreCheckoutQuery, InlineQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
  
 
 from catalog import BUILD_VARIANTS, LEAK_BUILD_VARIANTS, LEAK_MAP_VARIANTS, LEAK_PLUGIN_VARIANTS, LEAK_VARIANTS, OTHER_VARIANTS, WELCOME_TEXT
@@ -126,7 +127,6 @@ async def check_subscription(user_id: int, bot: Bot) -> tuple[list[str], list[st
     return not_subscribed, errors
 
 async def send_subscription_prompt(target, bot, not_subscribed_links, errors=None):
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     for link in not_subscribed_links:
         builder.button(text="📢 Подписаться", url=link)
@@ -183,6 +183,14 @@ LEAK_BUILD_ITEMS_BY_CALLBACK = {item.callback_data: item for item in LEAK_BUILD_
 LEAK_MAP_ITEMS_BY_CALLBACK = {item.callback_data: item for item in LEAK_MAP_VARIANTS}
 LEAK_PLUGIN_ITEMS_BY_CALLBACK = {item.callback_data: item for item in LEAK_PLUGIN_VARIANTS}
 ALL_ITEMS_BY_CALLBACK = {**BUILD_ITEMS_BY_CALLBACK, **OTHER_ITEMS_BY_CALLBACK}
+
+
+def back_button(callback_data: str) -> InlineKeyboardBuilder:
+    """Helper to create a back button."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔙 Назад", callback_data=callback_data)
+    return builder
+
 
 # Promo system data
 @dataclass
@@ -1198,11 +1206,7 @@ async def leak_build_lobby_reallyworld_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer(caption + "\n\nСсылка на скачивание пока не добавлена.")
 
-    # Кнопка возврата к сборкам утечек
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_builds").as_markup())
 
     await callback.answer()
 
@@ -1212,11 +1216,7 @@ async def leak_build_realllyworld_grief_handler(callback: CallbackQuery) -> None
     log_user_activity(callback, "open_leak_build_realllyworld_grief")
     await callback.message.answer(LEAK_BUILD_ITEMS_BY_CALLBACK["leak_build_realllyworld_grief"].caption)
     
-    # Кнопка возврата к сборкам утечек
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_builds").as_markup())
     
     await callback.answer()
 
@@ -1226,11 +1226,7 @@ async def leak_build_reallyworld_full_handler(callback: CallbackQuery) -> None:
     log_user_activity(callback, "open_leak_build_reallyworld_full")
     await callback.message.answer(LEAK_BUILD_ITEMS_BY_CALLBACK["leak_build_reallyworld_full"].caption)
     
-    # Кнопка возврата к сборкам утечек
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_builds").as_markup())
     
     await callback.answer()
 
@@ -1243,10 +1239,8 @@ async def leaks_plugins_handler(callback: CallbackQuery) -> None:
         reply_markup=leak_plugin_variants_menu(),
     )
     
-    # Кнопка возврата к плагинам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_plugins")
+    builder = back_button("back_to_leak_plugins")
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_plugins").as_markup())
     await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
@@ -1303,10 +1297,8 @@ async def leak_plugin_motd_rw_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer(caption + "\n\nФайл пока не добавлен.")
     
-    # Кнопка возврата к плагинам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leaks_plugins")
+    builder = back_button("back_to_leak_plugins")
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leaks_plugins").as_markup())
     await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
@@ -1328,11 +1320,7 @@ async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Файл пока не добавлен.")
     
-    # Кнопка возврата к ресурс-пакам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leaks_resourcepacks")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leaks_resourcepacks").as_markup())
     
     await callback.answer()
 
@@ -1384,11 +1372,7 @@ async def leak_map_spawn_reallyworld_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-    # Кнопка возврата к картам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
 
     await callback.answer()
 
@@ -1422,11 +1406,7 @@ async def leak_map_oremine_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-    # Кнопка возврата к картам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
 
     await callback.answer()
 
@@ -1460,11 +1440,7 @@ async def leak_map_aresmine_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-    # Кнопка возврата к картам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
 
     await callback.answer()
 
@@ -1484,11 +1460,7 @@ async def leak_map_spawn_lobby_reallyworld_handler(callback: CallbackQuery) -> N
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-    # Кнопка возврата к картам
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
+await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
 
     await callback.answer()
 
