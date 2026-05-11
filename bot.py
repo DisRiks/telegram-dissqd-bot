@@ -1202,7 +1202,7 @@ async def leak_build_lobby_reallyworld_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
 
     await callback.answer()
 
@@ -1216,7 +1216,7 @@ async def leak_build_realllyworld_grief_handler(callback: CallbackQuery) -> None
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
 
@@ -1230,7 +1230,7 @@ async def leak_build_reallyworld_full_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_builds")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
 
@@ -1247,7 +1247,7 @@ async def leaks_plugins_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_plugins")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
 
@@ -1307,7 +1307,7 @@ async def leak_plugin_motd_rw_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leaks_plugins")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
 
@@ -1332,7 +1332,7 @@ async def leak_resourcepack_rw_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leaks_resourcepacks")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
     
     await callback.answer()
 
@@ -1388,7 +1388,7 @@ async def leak_map_spawn_reallyworld_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
 
     await callback.answer()
 
@@ -1426,7 +1426,7 @@ async def leak_map_oremine_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
 
     await callback.answer()
 
@@ -1464,7 +1464,7 @@ async def leak_map_aresmine_handler(callback: CallbackQuery) -> None:
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
 
     await callback.answer()
 
@@ -1488,7 +1488,7 @@ async def leak_map_spawn_lobby_reallyworld_handler(callback: CallbackQuery) -> N
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     builder.button(text="🔙 Назад", callback_data="back_to_leak_maps")
-    await callback.message.answer("Выберите действие:", reply_markup=builder.as_markup())
+    await callback.message.edit_reply_markup(reply_markup=builder.as_markup())
 
     await callback.answer()
 
