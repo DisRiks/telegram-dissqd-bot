@@ -1372,8 +1372,7 @@ async def leak_map_spawn_reallyworld_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
-
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
     await callback.answer()
 
 
@@ -1406,8 +1405,7 @@ async def leak_map_oremine_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
-
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
     await callback.answer()
 
 
@@ -1440,8 +1438,7 @@ async def leak_map_aresmine_handler(callback: CallbackQuery) -> None:
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
-
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
     await callback.answer()
 
 
@@ -1460,9 +1457,9 @@ async def leak_map_spawn_lobby_reallyworld_handler(callback: CallbackQuery) -> N
     else:
         await callback.message.answer("Архив пока не добавлен.")
 
-await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
-
+    await callback.message.edit_reply_markup(reply_markup=back_button("back_to_leak_maps").as_markup())
     await callback.answer()
+
 
 async def handle_pending_purchase_message(message: Message) -> bool:
     pending = PENDING_PURCHASES.get(message.from_user.id)
