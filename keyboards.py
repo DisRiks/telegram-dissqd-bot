@@ -16,8 +16,9 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder.button(text="Активировать промокод", callback_data="promo_activate")
     builder.button(text="Не нашли нужный вам товар?", callback_data="help_find_product")
     if is_admin:
+        builder.button(text="🎫 Активные запросы", callback_data="admin_support_requests")
         builder.button(text="🔒 Приватный режим", callback_data="admin_privacy_toggle")
-        builder.adjust(3, 1, 1, 1, 1, 1)
+        builder.adjust(3, 1, 1, 1, 1, 2)
     else:
         builder.adjust(3, 1, 1, 1)
     return builder.as_markup()
