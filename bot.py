@@ -246,8 +246,8 @@ PRIVACY_MODE: bool = False
 # Кликер - валюта
 DIS_CURRENCY: dict[int, int] = {}
 DIS_COOLDOWNS: dict[int, float] = {}
-DIS_COOLDOWN_SECONDS = 3
-DIS_PER_CLICK = 1
+DIS_COOLDOWN_SECONDS = 2
+DIS_PER_CLICK = 0.1
 DIS_TO_DISCOUNT = 1000
 DISCOUNT_PERCENT = 10
 
@@ -1927,7 +1927,7 @@ async def clicker_menu_handler(callback: CallbackQuery) -> None:
     await callback.message.answer(
         "🎮 Магазин Dis\n\n"
         "Зарабатывай Dis нажимая кнопку!\n"
-        "1 нажатие = 1 Dis ( cooldown 3 сек )\n\n"
+        "1 нажатие = 0.1 Dis\n\n"
         "💰 1000 Dis = скидка 10% на любой товар",
         reply_markup=clicker_menu()
     )
