@@ -239,6 +239,18 @@ PURCHASE_HISTORY: dict[int, list[str]] = {}
 SUPPORT_TICKETS: dict[int, SupportTicket] = {}
 ADMIN_REPLY_STATES: dict[int, AdminReplyState] = {}
 
+# Режим приватности - бот игнорирует всех пользователей кроме админа
+PRIVACY_MODE: bool = False
+
+
+def privacy_middleware(handler, event):
+    """Middleware для проверки режима приватности."""
+    if isinstance(event, (Message, CallbackQuery)):
+        user_id = getattr(event.from_user, 'id', None)
+        if PRIVACY_MODE and user_id and not is_admin(user_id):
+            return
+    return handler
+
 
 def is_admin(user_id: int) -> bool:
     return user_id == settings.support_admin_id
@@ -597,6 +609,8 @@ async def promo_approve_handler(message: Message, bot: Bot) -> None:
             pass
 
 async def broadcast_promo_code(promo: PromoCode, bot: Bot) -> None:
+    if PRIVACY_MODE:
+        return
     if not REGISTERED_USERS:
         return
     prize = f"{promo.discount_flat} ₽" if promo.discount_flat is not None else f"{promo.discount_percent}%"
@@ -606,6 +620,8 @@ async def broadcast_promo_code(promo: PromoCode, bot: Bot) -> None:
         f"Приз - ({prize})"
     )
     for uid in list(REGISTERED_USERS):
+        if PRIVACY_MODE and not is_admin(uid):
+            continue
         try:
             await bot.send_message(uid, text)
         except Exception:
@@ -613,6 +629,8 @@ async def broadcast_promo_code(promo: PromoCode, bot: Bot) -> None:
 
 
 async def announce_promo_creation(promo: PromoCode, code: str, bot: Bot) -> None:
+    if PRIVACY_MODE:
+        return
     # Announcement formatted per request:
     if promo.free_product_title:
         prize = f"Бесплатный товар: {promo.free_product_title}"
@@ -648,6 +666,40 @@ async def promo_delete_cmd(message: Message) -> None:
         await message.answer(f"Промокод {code} удалён. Активаций было: {promo.activations}/{promo.max_uses}")
     else:
         await message.answer(f"Промокод {code} не найден.")
+
+
+@dp.message(Command(commands=["privacy"]))
+async def privacy_mode_cmd(message: Message) -> None:
+    global PRIVACY_MODE
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+    parts = message.text.split(None, 1)
+    if len(parts) < 2:
+        status = "ВКЛЮЧЁН" if PRIVACY_MODE else "ВЫКЛЮЧЕН"
+        await message.answer(f"Режим приватности: {status}")
+        return
+    action = parts[1].strip().lower()
+    if action == "on":
+        PRIVACY_MODE = True
+        await message.answer("🔒 Режим приватности ВКЛЮЧЁН. Пользователи не получат сообщений.")
+    elif action == "off":
+        PRIVACY_MODE = False
+        await message.answer("🔓 Режим приватности ВЫКЛЮЧЕН. Бот работает для всех.")
+    else:
+        await message.answer("Использование: /privacy on | off")
+
+
+@dp.callback_query(F.data == "admin_privacy_toggle")
+async def admin_privacy_toggle_handler(callback: CallbackQuery) -> None:
+    if not is_admin(callback.from_user.id):
+        await callback.answer()
+        return
+    global PRIVACY_MODE
+    PRIVACY_MODE = not PRIVACY_MODE
+    status = "🔒 ВКЛЮЧЁН" if PRIVACY_MODE else "🔓 ВЫКЛЮЧЕН"
+    await callback.message.answer(f"Режим приватности: {status}")
+    await callback.answer()
     for uid in list(REGISTERED_USERS):
         try:
             await bot.send_message(uid, text)
@@ -1720,6 +1772,11 @@ async def handle_admin_support_reply(message: Message, bot: Bot) -> bool:
 @dp.message()
 async def user_message_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id
+
+    # Проверка режима приватности - админ видит всё, остальные нет
+    if PRIVACY_MODE and not is_admin(user_id):
+        return
+
     # Check subscription first - block all usage if not subscribed
     if message.text and message.text.startswith("/start"):
         # /start handler will deal with it

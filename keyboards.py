@@ -14,11 +14,10 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder.button(text="⭐ Поддержать сливы (15 ⭐)", callback_data="boost")
     builder.button(text="🆓 Сливы", callback_data="free_builds")
     builder.button(text="Активировать промокод", callback_data="promo_activate")
-    # Новый быстрый хелп: пользователь может запросить помощь, если не нашёл нужный товар
     builder.button(text="Не нашли нужный вам товар?", callback_data="help_find_product")
     if is_admin:
-        builder.button(text="🎫 Активные запросы", callback_data="admin_support_requests")
-        builder.adjust(3, 1, 1, 1, 1)
+        builder.button(text="🔒 Приватный режим", callback_data="admin_privacy_toggle")
+        builder.adjust(3, 1, 1, 1, 1, 1)
     else:
         builder.adjust(3, 1, 1, 1)
     return builder.as_markup()
