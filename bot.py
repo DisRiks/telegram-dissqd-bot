@@ -631,6 +631,23 @@ async def announce_promo_creation(promo: PromoCode, code: str, bot: Bot) -> None
     )
     if not REGISTERED_USERS:
         return
+
+
+@dp.message(Command(commands=["promo_delete"]))
+async def promo_delete_cmd(message: Message) -> None:
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+    parts = message.text.split(None, 1)
+    if len(parts) < 2:
+        await message.answer("Использование: /promo_delete CODE")
+        return
+    code = parts[1].strip()
+    if code in PROMO_CODES:
+        promo = PROMO_CODES.pop(code)
+        await message.answer(f"Промокод {code} удалён. Активаций было: {promo.activations}/{promo.max_uses}")
+    else:
+        await message.answer(f"Промокод {code} не найден.")
     for uid in list(REGISTERED_USERS):
         try:
             await bot.send_message(uid, text)
@@ -649,6 +666,7 @@ def promo_help_text() -> str:
         "/promo_create_flat CODE AMOUNT MAX_USES [DESCRIPTION] - создать промокод (фиксированная сумма ₽)\n"
         "/promo_free CODE MAX_USES PRODUCT_KEY [DESCRIPTION] - бесплатный товар по промокоду\n"
         "/promo_product CODE MAX_USES PRODUCT_KEY DISCOUNT [DESCRIPTION] - скидка на товар\n"
+        "/promo_delete CODE - удалить промокод\n"
         "/promo_broadcast CODE - распространить промокод всем пользователям\n"
         "/promo_approve CODE - подтвердить активацию промокода для пользователя\n"
         "/promo_activate - начать активацию промокода через бота\n"
