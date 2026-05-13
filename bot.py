@@ -1920,11 +1920,6 @@ async def main() -> None:
             retry = min(retry + 1, 6)
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main())
-
-
 # ================== КЛИКЕР ==================
 
 @dp.callback_query(F.data == "clicker_menu")
@@ -1945,14 +1940,12 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     import time
     current_time = time.time()
     
-    # Проверка кулдауна
     last_click = DIS_COOLDOWNS.get(user_id, 0)
     if current_time - last_click < DIS_COOLDOWN_SECONDS:
         remaining = int(DIS_COOLDOWN_SECONDS - (current_time - last_click))
         await callback.answer(f"⏳ Подожди {remaining} сек!", show_alert=True)
         return
     
-    # Начисляем
     DIS_COOLDOWNS[user_id] = current_time
     DIS_CURRENCY[user_id] = DIS_CURRENCY.get(user_id, 0) + DIS_PER_CLICK
     
@@ -2017,3 +2010,8 @@ async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
         )
     
     await callback.answer()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    asyncio.run(main())
