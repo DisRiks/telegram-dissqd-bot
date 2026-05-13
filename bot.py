@@ -25,6 +25,7 @@ from keyboards import (
     admin_support_requests_menu,
     admin_support_ticket_menu,
     build_variants_menu,
+    clicker_menu,
     download_link_menu,
     leak_build_variants_menu,
     leak_map_variants_menu,
@@ -241,6 +242,14 @@ ADMIN_REPLY_STATES: dict[int, AdminReplyState] = {}
 
 # Режим приватности - бот игнорирует всех пользователей кроме админа
 PRIVACY_MODE: bool = False
+
+# Кликер - валюта
+DIS_CURRENCY: dict[int, int] = {}
+DIS_COOLDOWNS: dict[int, float] = {}
+DIS_COOLDOWN_SECONDS = 3
+DIS_PER_CLICK = 1
+DIS_TO_DISCOUNT = 1000
+DISCOUNT_PERCENT = 10
 
 
 def privacy_middleware(handler, event):
@@ -1914,3 +1923,97 @@ async def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
+
+
+# ================== КЛИКЕР ==================
+
+@dp.callback_query(F.data == "clicker_menu")
+async def clicker_menu_handler(callback: CallbackQuery) -> None:
+    await callback.message.answer(
+        "🎮 Магазин Dis\n\n"
+        "Зарабатывай Dis нажимая кнопку!\n"
+        "1 нажатие = 1 Dis ( cooldown 3 сек )\n\n"
+        "💰 1000 Dis = скидка 10% на любой товар",
+        reply_markup=clicker_menu()
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "click_earn")
+async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
+    user_id = callback.from_user.id
+    import time
+    current_time = time.time()
+    
+    # Проверка кулдауна
+    last_click = DIS_COOLDOWNS.get(user_id, 0)
+    if current_time - last_click < DIS_COOLDOWN_SECONDS:
+        remaining = int(DIS_COOLDOWN_SECONDS - (current_time - last_click))
+        await callback.answer(f"⏳ Подожди {remaining} сек!", show_alert=True)
+        return
+    
+    # Начисляем
+    DIS_COOLDOWNS[user_id] = current_time
+    DIS_CURRENCY[user_id] = DIS_CURRENCY.get(user_id, 0) + DIS_PER_CLICK
+    
+    balance = DIS_CURRENCY[user_id]
+    progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
+    
+    await callback.message.answer(
+        f"✅ +{DIS_PER_CLICK} Dis!\n\n"
+        f"💰 Баланс: {balance} Dis\n"
+        f"📊 Прогресс: {progress:.1f}% ({balance}/{DIS_TO_DISCOUNT})"
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "click_balance")
+async def click_balance_handler(callback: CallbackQuery) -> None:
+    user_id = callback.from_user.id
+    balance = DIS_CURRENCY.get(user_id, 0)
+    progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
+    
+    await callback.message.answer(
+        f"💰 Твой баланс: {balance} Dis\n\n"
+        f"📊 Прогресс: {progress:.1f}%\n"
+        f"🎁 Награда: {DIS_TO_DISCOUNT} Dis = {DISCOUNT_PERCENT}% скидка"
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "click_exchange")
+async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
+    user_id = callback.from_user.id
+    balance = DIS_CURRENCY.get(user_id, 0)
+    
+    if balance < DIS_TO_DISCOUNT:
+        remaining = DIS_TO_DISCOUNT - balance
+        await callback.message.answer(
+            f"❌ Недостаточно Dis!\n\n"
+            f"💰 У тебя: {balance} Dis\n"
+            f"🎁 Нужно: {DIS_TO_DISCOUNT} Dis\n"
+            f"📈 Осталось: {remaining} Dis"
+        )
+    else:
+        DIS_CURRENCY[user_id] = 0
+        USER_PROMOS[user_id] = f"CLICKER{user_id}"
+        promo_code = PromoCode(
+            code=f"CLICKER{user_id}",
+            discount_percent=DISCOUNT_PERCENT,
+            max_uses=1,
+            created_by=settings.support_admin_id,
+            description="Скидка за кликер"
+        )
+        PROMO_CODES[f"CLICKER{user_id}"] = promo_code
+        
+        await callback.message.answer(
+            f"🎉 Поздравляем! Скидка {DISCOUNT_PERCENT}% активирована!\n\n"
+            f"Используй её при покупке товара.\n"
+            f"⚠️ Скидка действует 1 раз."
+        )
+        await bot.send_message(
+            settings.support_admin_id,
+            f"🎮 Пользователь @{callback.from_user.username} обменял {DIS_TO_DISCOUNT} Dis на скидку {DISCOUNT_PERCENT}%"
+        )
+    
+    await callback.answer()
