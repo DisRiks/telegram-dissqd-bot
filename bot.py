@@ -244,8 +244,72 @@ ADMIN_REPLY_STATES: dict[int, AdminReplyState] = {}
 PRIVACY_MODE: bool = False
 
 # Кликер - валюта
-DIS_CURRENCY: dict[int, int] = {}
-DIS_COOLDOWNS: dict[int, float] = {}
+import sqlite3
+from pathlib import Path
+
+CLICKER_DB = Path(__file__).resolve().parent / "clicker.db"
+
+def init_clicker_db():
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS clicker_data (
+            user_id INTEGER PRIMARY KEY,
+            balance REAL DEFAULT 0,
+            last_click REAL DEFAULT 0
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def get_user_balance(user_id: int) -> float:
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT balance FROM clicker_data WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+def set_user_balance(user_id: int, balance: float):
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO clicker_data (user_id, balance) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET balance = ?
+    """, (user_id, balance, balance))
+    conn.commit()
+    conn.close()
+
+def get_user_last_click(user_id: int) -> float:
+    import time
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_click FROM clicker_data WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+def set_user_last_click(user_id: int, last_click: float):
+    import time
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO clicker_data (user_id, last_click) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET last_click = ?
+    """, (user_id, last_click, last_click))
+    conn.commit()
+    conn.close()
+
+def get_all_users_balance() -> list:
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, balance FROM clicker_data WHERE balance > 0 ORDER BY balance DESC")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+init_clicker_db()
+
 DIS_COOLDOWN_SECONDS = 2
 DIS_PER_CLICK = 0.1
 DIS_TO_DISCOUNT = 1000
@@ -1940,22 +2004,22 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     import time
     current_time = time.time()
     
-    last_click = DIS_COOLDOWNS.get(user_id, 0)
+    last_click = get_user_last_click(user_id)
     if current_time - last_click < DIS_COOLDOWN_SECONDS:
         remaining = int(DIS_COOLDOWN_SECONDS - (current_time - last_click))
         await callback.answer(f"⏳ Подожди {remaining} сек!", show_alert=True)
         return
     
-    DIS_COOLDOWNS[user_id] = current_time
-    DIS_CURRENCY[user_id] = DIS_CURRENCY.get(user_id, 0) + DIS_PER_CLICK
+    set_user_last_click(user_id, current_time)
+    balance = get_user_balance(user_id) + DIS_PER_CLICK
+    set_user_balance(user_id, balance)
     
-    balance = DIS_CURRENCY[user_id]
     progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
     
     await callback.message.answer(
         f"✅ +{DIS_PER_CLICK} Dis!\n\n"
-        f"💰 Баланс: {balance} Dis\n"
-        f"📊 Прогресс: {progress:.1f}% ({balance}/{DIS_TO_DISCOUNT})"
+        f"💰 Баланс: {balance:.1f} Dis\n"
+        f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
     )
     await callback.answer()
 
@@ -1963,11 +2027,11 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
 @dp.callback_query(F.data == "click_balance")
 async def click_balance_handler(callback: CallbackQuery) -> None:
     user_id = callback.from_user.id
-    balance = DIS_CURRENCY.get(user_id, 0)
+    balance = get_user_balance(user_id)
     progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
     
     await callback.message.answer(
-        f"💰 Твой баланс: {balance} Dis\n\n"
+        f"💰 Твой баланс: {balance:.1f} Dis\n\n"
         f"📊 Прогресс: {progress:.1f}%\n"
         f"🎁 Награда: {DIS_TO_DISCOUNT} Dis = {DISCOUNT_PERCENT}% скидка"
     )
@@ -1977,18 +2041,18 @@ async def click_balance_handler(callback: CallbackQuery) -> None:
 @dp.callback_query(F.data == "click_exchange")
 async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
     user_id = callback.from_user.id
-    balance = DIS_CURRENCY.get(user_id, 0)
+    balance = get_user_balance(user_id)
     
     if balance < DIS_TO_DISCOUNT:
         remaining = DIS_TO_DISCOUNT - balance
         await callback.message.answer(
             f"❌ Недостаточно Dis!\n\n"
-            f"💰 У тебя: {balance} Dis\n"
+            f"💰 У тебя: {balance:.1f} Dis\n"
             f"🎁 Нужно: {DIS_TO_DISCOUNT} Dis\n"
-            f"📈 Осталось: {remaining} Dis"
+            f"📈 Осталось: {remaining:.1f} Dis"
         )
     else:
-        DIS_CURRENCY[user_id] = 0
+        set_user_balance(user_id, 0)
         USER_PROMOS[user_id] = f"CLICKER{user_id}"
         promo_code = PromoCode(
             code=f"CLICKER{user_id}",
@@ -2010,6 +2074,58 @@ async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
         )
     
     await callback.answer()
+
+
+@dp.message(Command(commands=["clicker_list"]))
+async def clicker_list_cmd(message: Message) -> None:
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+    users = get_all_users_balance()
+    if not users:
+        await message.answer("Нет пользователей с балансом.")
+        return
+    text = "💰 Балансы кликера:\n\n"
+    for user_id, balance in users:
+        text += f"🆔 {user_id}: {balance:.1f} Dis\n"
+    await message.answer(text)
+
+
+@dp.message(Command(commands=["clicker_delete"]))
+async def clicker_delete_cmd(message: Message) -> None:
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+    parts = message.text.split(None, 1)
+    if len(parts) < 2:
+        await message.answer("Использование: /clicker_delete USER_ID")
+        return
+    try:
+        user_id = int(parts[1].strip())
+    except ValueError:
+        await message.answer("USER_ID должен быть числом.")
+        return
+    set_user_balance(user_id, 0)
+    await message.answer(f"✅ Баланс пользователя {user_id} обнулён.")
+
+
+@dp.message(Command(commands=["clicker_set"]))
+async def clicker_set_cmd(message: Message) -> None:
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+    parts = message.text.split(None, 2)
+    if len(parts) < 3:
+        await message.answer("Использование: /clicker_set USER_ID AMOUNT")
+        return
+    try:
+        user_id = int(parts[1].strip())
+        amount = float(parts[2].strip())
+    except ValueError:
+        await message.answer("USER_ID и AMOUNT должны быть числами.")
+        return
+    set_user_balance(user_id, amount)
+    await message.answer(f"✅ Баланс пользователя {user_id} установлен: {amount} Dis")
 
 
 if __name__ == "__main__":
