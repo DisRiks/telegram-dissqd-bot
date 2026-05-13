@@ -208,8 +208,12 @@ class PromoCode:
     pending_activations: set[int] = field(default_factory=set)
     # Бесплатный товар по ключу (например, "build_reallyworld_grief")
     free_product_key: str | None = None
+    # Название товара (для отображения)
+    free_product_title: str | None = None
     # Скидка на конкретный товар: {product_key: discount_percent}
     product_discount: dict[str, int] | None = None
+    # Название товара со скидкой
+    discount_product_title: str | None = None
 @dataclass
 class PendingPromoDraft:
     code: str | None = None
@@ -441,7 +445,27 @@ async def promo_free_cmd(message: Message) -> None:
         return
     product_key = parts[3]
     description = parts[4] if len(parts) > 4 else None
-    promo = PromoCode(code=code, discount_percent=0, max_uses=max_uses, created_by=message.from_user.id, description=description, free_product_key=product_key)
+
+    # Получаем название товара
+    product_title = product_key
+    if product_key in ALL_ITEMS_BY_CALLBACK:
+        product_title = ALL_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_BUILD_ITEMS_BY_CALLBACK:
+        product_title = LEAK_BUILD_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_MAP_ITEMS_BY_CALLBACK:
+        product_title = LEAK_MAP_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_PLUGIN_ITEMS_BY_CALLBACK:
+        product_title = LEAK_PLUGIN_ITEMS_BY_CALLBACK[product_key].title
+
+    promo = PromoCode(
+        code=code,
+        discount_percent=0,
+        max_uses=max_uses,
+        created_by=message.from_user.id,
+        description=description,
+        free_product_key=product_key,
+        free_product_title=product_title
+    )
     PROMO_CODES[code] = promo
     await announce_promo_creation(promo, code, message.bot)
 
@@ -466,7 +490,27 @@ async def promo_product_cmd(message: Message) -> None:
         return
     product_key = parts[3]
     description = parts[5] if len(parts) > 5 else None
-    promo = PromoCode(code=code, discount_percent=discount, max_uses=max_uses, created_by=message.from_user.id, description=description, product_discount={product_key: discount})
+
+    # Получаем название товара
+    product_title = product_key
+    if product_key in ALL_ITEMS_BY_CALLBACK:
+        product_title = ALL_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_BUILD_ITEMS_BY_CALLBACK:
+        product_title = LEAK_BUILD_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_MAP_ITEMS_BY_CALLBACK:
+        product_title = LEAK_MAP_ITEMS_BY_CALLBACK[product_key].title
+    elif product_key in LEAK_PLUGIN_ITEMS_BY_CALLBACK:
+        product_title = LEAK_PLUGIN_ITEMS_BY_CALLBACK[product_key].title
+
+    promo = PromoCode(
+        code=code,
+        discount_percent=discount,
+        max_uses=max_uses,
+        created_by=message.from_user.id,
+        description=description,
+        product_discount={product_key: discount},
+        discount_product_title=product_title
+    )
     PROMO_CODES[code] = promo
     await announce_promo_creation(promo, code, message.bot)
 
@@ -570,7 +614,14 @@ async def broadcast_promo_code(promo: PromoCode, bot: Bot) -> None:
 
 async def announce_promo_creation(promo: PromoCode, code: str, bot: Bot) -> None:
     # Announcement formatted per request:
-    prize = f"{promo.discount_flat} ₽" if promo.discount_flat is not None else f"{promo.discount_percent}%"
+    if promo.free_product_title:
+        prize = f"Бесплатный товар: {promo.free_product_title}"
+    elif promo.discount_product_title:
+        prize = f"Скидка {promo.discount_percent}% на товар: {promo.discount_product_title}"
+    elif promo.discount_flat is not None:
+        prize = f"{promo.discount_flat} ₽"
+    else:
+        prize = f"{promo.discount_percent}%"
     description_text = promo.description if promo.description else "нет описания"
     text = (
         f"Новый промокод - ({code})\n"
@@ -654,14 +705,25 @@ async def user_promo_yes_handler(message: Message, bot: Bot) -> None:
     if current_code != code:
         await message.answer(f"У пользователя @{username} нет активного промокода {code}. Текущий: {current_code or 'нет'}.")
         return
+
+    # Определяем название товара для уведомления
+    if promo.free_product_title:
+        prize_text = f"Бесплатный товар: {promo.free_product_title}"
+    elif promo.discount_product_title:
+        prize_text = f"Скидка {promo.discount_percent}% на товар: {promo.discount_product_title}"
+    elif promo.discount_flat is not None:
+        prize_text = f"Приз: {promo.discount_flat} ₽"
+    else:
+        prize_text = f"Скидка {promo.discount_percent}%"
+
     # Выдаём приз и удаляем промокод
     USER_PROMOS.pop(user_id, None)
     USER_PROMO_ACTIVATED_AT.pop(user_id, None)
     try:
-        await bot.send_message(user_id, f"Поздравляем! Вы получили приз по промокоду {code}.")
+        await bot.send_message(user_id, f"🎉 Поздравляем! Вы получили: {prize_text}")
     except Exception:
         pass
-    await message.answer(f"Приз по промокоду {code} выдан пользователю @{username}. Промокод деактивирован.")
+    await message.answer(f"Приз ({prize_text}) выдан пользователю @{username}. Промокод {code} деактивирован.")
 
 @dp.callback_query(F.data == "buy_build")
 async def buy_build_handler(callback: CallbackQuery) -> None:
