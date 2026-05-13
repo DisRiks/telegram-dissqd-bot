@@ -206,6 +206,10 @@ class PromoCode:
     description: str | None = None
     # Pending activations from users awaiting admin approval
     pending_activations: set[int] = field(default_factory=set)
+    # Бесплатный товар по ключу (например, "build_reallyworld_grief")
+    free_product_key: str | None = None
+    # Скидка на конкретный товар: {product_key: discount_percent}
+    product_discount: dict[str, int] | None = None
 @dataclass
 class PendingPromoDraft:
     code: str | None = None
@@ -396,14 +400,14 @@ async def start_handler(message: Message, bot: Bot) -> None:
 
 @dp.message(Command(commands=["promo_create"]))
 async def promo_create_cmd(message: Message) -> None:
-    # Simple admin-only promo creation: /promo_create CODE DISCOUNT MAX_USES [DESCRIPTION]
+    # Simple admin-only promo creation: /promo_create CODE DISCOUNT(%) MAX_USES [DESCRIPTION]
     if not is_admin(message.from_user.id):
         await message.answer("Недоступно.")
         return
 
     parts = message.text.split(None, 4)
     if len(parts) < 4:
-        await message.answer("Использование: /promo_create CODE DISCOUNT(MAX%) MAX_USES [DESCRIPTION]")
+        await message.answer("Использование: /promo_create CODE DISCOUNT(%) MAX_USES [DESCRIPTION]")
         return
     code = parts[1]
     try:
@@ -414,6 +418,55 @@ async def promo_create_cmd(message: Message) -> None:
         return
     description = parts[4] if len(parts) > 4 else None
     promo = PromoCode(code=code, discount_percent=discount, max_uses=max_uses, created_by=message.from_user.id, description=description)
+    PROMO_CODES[code] = promo
+    await announce_promo_creation(promo, code, message.bot)
+
+
+@dp.message(Command(commands=["promo_free"]))
+async def promo_free_cmd(message: Message) -> None:
+    # Создание промокода на бесплатный товар: /promo_free CODE MAX_USES PRODUCT_KEY [DESCRIPTION]
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+
+    parts = message.text.split(None, 4)
+    if len(parts) < 4:
+        await message.answer("Использование: /promo_free CODE MAX_USES PRODUCT_KEY [DESCRIPTION]\nПример: /promo_free FREEGRIEF 100 build_reallyworld_grief Бесплатная Grief")
+        return
+    code = parts[1]
+    try:
+        max_uses = int(parts[2])
+    except ValueError:
+        await message.answer("max_uses должен быть числом.")
+        return
+    product_key = parts[3]
+    description = parts[4] if len(parts) > 4 else None
+    promo = PromoCode(code=code, discount_percent=0, max_uses=max_uses, created_by=message.from_user.id, description=description, free_product_key=product_key)
+    PROMO_CODES[code] = promo
+    await announce_promo_creation(promo, code, message.bot)
+
+
+@dp.message(Command(commands=["promo_product"]))
+async def promo_product_cmd(message: Message) -> None:
+    # Создание промокода со скидкой на конкретный товар: /promo_product CODE MAX_USES PRODUCT_KEY DISCOUNT [DESCRIPTION]
+    if not is_admin(message.from_user.id):
+        await message.answer("Недоступно.")
+        return
+
+    parts = message.text.split(None, 5)
+    if len(parts) < 5:
+        await message.answer("Использование: /promo_product CODE MAX_USES PRODUCT_KEY DISCOUNT [DESCRIPTION]\nПример: /promo_product GRIEF50 50 build_reallyworld_grief 50 Скидка 50% на Grief")
+        return
+    code = parts[1]
+    try:
+        max_uses = int(parts[2])
+        discount = int(parts[4])
+    except ValueError:
+        await message.answer("max_uses и DISCOUNT должны быть числами.")
+        return
+    product_key = parts[3]
+    description = parts[5] if len(parts) > 5 else None
+    promo = PromoCode(code=code, discount_percent=discount, max_uses=max_uses, created_by=message.from_user.id, description=description, product_discount={product_key: discount})
     PROMO_CODES[code] = promo
     await announce_promo_creation(promo, code, message.bot)
 
@@ -543,6 +596,8 @@ def promo_help_text() -> str:
         "Команды (администратору):\n"
         "/promo_create CODE DISCOUNT MAX_USES [DESCRIPTION] - создать промокод (процент)\n"
         "/promo_create_flat CODE AMOUNT MAX_USES [DESCRIPTION] - создать промокод (фиксированная сумма ₽)\n"
+        "/promo_free CODE MAX_USES PRODUCT_KEY [DESCRIPTION] - бесплатный товар по промокоду\n"
+        "/promo_product CODE MAX_USES PRODUCT_KEY DISCOUNT [DESCRIPTION] - скидка на товар\n"
         "/promo_broadcast CODE - распространить промокод всем пользователям\n"
         "/promo_approve CODE - подтвердить активацию промокода для пользователя\n"
         "/promo_activate - начать активацию промокода через бота\n"
@@ -762,19 +817,39 @@ async def back_to_leak_resourcepacks_handler(callback: CallbackQuery) -> None:
     await callback.answer()
 
 @dp.callback_query(F.data.startswith("purchase:"))
-async def purchase_start_handler(callback: CallbackQuery) -> None:
+async def purchase_start_handler(callback: CallbackQuery, bot: Bot) -> None:
     log_user_activity(callback, "start_purchase")
     item_key = callback.data.split(":", 1)[1]
     item = ALL_ITEMS_BY_CALLBACK[item_key]
+
+    # Проверяем промокод пользователя
+    user_promo_code = USER_PROMOS.get(callback.from_user.id)
+    promo_info = ""
+    final_price_text = ""
+
+    if user_promo_code:
+        promo = PROMO_CODES.get(user_promo_code)
+        if promo and promo.active:
+            # Бесплатный товар
+            if promo.free_product_key == item_key:
+                final_price_text = "🎁 Промокод активирован! Товар бесплатный!"
+            # Скидка на товар
+            elif promo.product_discount and promo.product_discount.get(item_key):
+                discount = promo.product_discount[item_key]
+                final_price_text = f"🎁 Промокод активирован! Скидка {discount}% на этот товар!"
+
     PENDING_PURCHASES[callback.from_user.id] = PendingPurchase(
         item_key=item_key,
         step="await_funpay_nick",
     )
-    await callback.message.answer(
-        f"Вы выбрали: {item.title}\n\n"
-        "Теперь отправьте ваш ник на FunPay одним сообщением.\n\n"
-        "Внимание: при неправильном указании ника деньги не возвращаются."
-    )
+
+    msg = f"Вы выбрали: {item.title}\n\n"
+    if final_price_text:
+        msg += final_price_text + "\n\n"
+    msg += "Теперь отправьте ваш ник на FunPay одним сообщением.\n\n"
+    msg += "Внимание: при неправильном указании ника деньги не возвращаются."
+
+    await callback.message.answer(msg)
     await callback.answer()
 
 
