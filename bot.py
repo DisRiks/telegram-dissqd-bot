@@ -2133,24 +2133,26 @@ async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
         )
     else:
         set_user_balance(user_id, 0)
-        USER_PROMOS[user_id] = f"CLICKER{user_id}"
+        
+        import random, string
+        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        
         promo_code = PromoCode(
-            code=f"CLICKER{user_id}",
+            code=code,
             discount_percent=DISCOUNT_PERCENT,
             max_uses=1,
             created_by=settings.support_admin_id,
-            description="Скидка за кликер"
+            description=f"Скидка за кликер для @{callback.from_user.username or callback.from_user.full_name}"
         )
-        PROMO_CODES[f"CLICKER{user_id}"] = promo_code
+        PROMO_CODES[code] = promo_code
+        
+        USER_PROMOS[user_id] = code
         
         await callback.message.answer(
-            f"🎉 Поздравляем! Скидка {DISCOUNT_PERCENT}% активирована!\n\n"
-            f"Используй её при покупке товара.\n"
-            f"⚠️ Скидка действует 1 раз."
-        )
-        await bot.send_message(
-            settings.support_admin_id,
-            f"🎮 Пользователь @{callback.from_user.username} обменял {DIS_TO_DISCOUNT} Dis на скидку {DISCOUNT_PERCENT}%"
+            f"🎉 Поздравляем! Ваш промокод: {code}\n\n"
+            f"📝 Напишите в Тех.Поддержку для активации скидки!\n"
+            f"🎁 Скидка: {DISCOUNT_PERCENT}%\n"
+            f"⚠️ Промокод одноразовый."
         )
     
     await callback.answer()
