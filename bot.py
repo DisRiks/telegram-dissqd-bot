@@ -257,12 +257,9 @@ def init_clicker_db():
             user_id INTEGER PRIMARY KEY,
             balance REAL DEFAULT 0,
             last_click REAL DEFAULT 0,
-            last_bonus REAL DEFAULT 0
+            last_bonus REAL DEFAULT 0,
+            click_count INTEGER DEFAULT 0
         )
-    """)
-    cursor.execute("""
-        INSERT OR IGNORE INTO clicker_data (user_id, last_bonus) 
-        SELECT user_id, 0 FROM clicker_data WHERE last_bonus IS NULL
     """)
     conn.commit()
     conn.close()
@@ -322,6 +319,24 @@ def set_user_last_bonus(user_id: int, last_bonus: float):
         INSERT INTO clicker_data (user_id, last_bonus) VALUES (?, ?)
         ON CONFLICT(user_id) DO UPDATE SET last_bonus = ?
     """, (user_id, last_bonus, last_bonus))
+    conn.commit()
+    conn.close()
+
+def get_user_click_count(user_id: int) -> int:
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT click_count FROM clicker_data WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+def set_user_click_count(user_id: int, count: int):
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO clicker_data (user_id, click_count) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET click_count = ?
+    """, (user_id, count, count))
     conn.commit()
     conn.close()
 
@@ -2016,8 +2031,7 @@ async def main() -> None:
 async def clicker_menu_handler(callback: CallbackQuery) -> None:
     await callback.message.answer(
         "🎮 Кликер\n\n"
-        "🔨 Заработать — от 0.1 до 10 Dis (кулдаун 2 сек)\n"
-        "🎁 Бонус — до 100 Dis (раз в 2 дня)\n\n"
+        "Зарабатывай Dis и обменивай на скидку!\n\n"
         "💰 1000 Dis = скидка 10%",
         reply_markup=clicker_menu()
     )
@@ -2039,16 +2053,26 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     
     set_user_last_click(user_id, current_time)
     
+    # Считаем клики
+    click_count = get_user_click_count(user_id) + 1
+    set_user_click_count(user_id, click_count)
+    
     # Рандомное количество от 0.1 до 10
     amount = round(random.uniform(0.1, 10), 1)
     balance = get_user_balance(user_id) + amount
     set_user_balance(user_id, balance)
     
     luck_emoji = "🍀" if amount >= 5 else "💰"
+    bonus_msg = ""
+    
+    # Бонус доступен каждые 10 кликов
+    if click_count % 10 == 0:
+        bonus_msg = "\n\n🎁 Бонус доступен!"
+    
     progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
     
     await callback.message.answer(
-        f"{luck_emoji} +{amount} Dis!\n\n"
+        f"{luck_emoji} +{amount} Dis!\n{bonus_msg}\n\n"
         f"💰 Баланс: {balance:.1f} Dis\n"
         f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
     )
@@ -2061,6 +2085,11 @@ async def click_bonus_handler(callback: CallbackQuery, bot: Bot) -> None:
     import time
     import random
     current_time = time.time()
+    
+    click_count = get_user_click_count(user_id)
+    if click_count < 10:
+        await callback.answer(f"⏳ Сделай ещё {10 - click_count} кликов!", show_alert=True)
+        return
     
     last_bonus = get_user_last_bonus(user_id)
     if current_time - last_bonus < BONUS_COOLDOWN_SECONDS:
