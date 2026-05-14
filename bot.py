@@ -1272,6 +1272,15 @@ async def support_send_handler(callback: CallbackQuery, bot: Bot) -> None:
         return
 
     purchases = PURCHASE_HISTORY.get(user_id, [])
+    
+    # Проверяем есть ли промокод от кликера
+    promo_code = USER_PROMOS.get(user_id)
+    promo_info = ""
+    if promo_code:
+        promo = PROMO_CODES.get(promo_code)
+        if promo:
+            promo_info = f"🎁 Промокод: {promo_code} ({promo.discount_percent}% скидка)"
+    
     ticket = SupportTicket(
         ticket_id=next(SUPPORT_TICKET_COUNTER),
         user_id=user_id,
@@ -1283,13 +1292,16 @@ async def support_send_handler(callback: CallbackQuery, bot: Bot) -> None:
     SUPPORT_TICKETS[ticket.ticket_id] = ticket
     SUPPORT_DRAFTS.pop(user_id, None)
 
-    await bot.send_message(
-        settings.support_admin_id,
+    msg_to_admin = (
         f"🟢 Новое обращение #{ticket.ticket_id}\n\n"
         f"👤 Пользователь: {ticket.full_name}\n"
         f"🧾 Покупки: {ticket.purchases_text}\n\n"
-        "Откройте раздел Активные запросы, чтобы ответить.",
     )
+    if promo_info:
+        msg_to_admin += f"{promo_info}\n\n"
+    msg_to_admin += "Откройте раздел Активные запросы, чтобы ответить."
+
+    await bot.send_message(settings.support_admin_id, msg_to_admin)
     await callback.message.answer("Ваше обращение отправлено. Ожидайте ответа от поддержки.")
     await callback.answer()
 
@@ -2145,14 +2157,11 @@ async def click_exchange_handler(callback: CallbackQuery, bot: Bot) -> None:
             description=f"Скидка за кликер для @{callback.from_user.username or callback.from_user.full_name}"
         )
         PROMO_CODES[code] = promo_code
-        
         USER_PROMOS[user_id] = code
         
         await callback.message.answer(
-            f"🎉 Поздравляем! Ваш промокод: {code}\n\n"
-            f"📝 Напишите в Тех.Поддержку для активации скидки!\n"
-            f"🎁 Скидка: {DISCOUNT_PERCENT}%\n"
-            f"⚠️ Промокод одноразовый."
+            f"✅ Вы успешно обменяли {DIS_TO_DISCOUNT} Dis на {DISCOUNT_PERCENT}% скидку!\n\n"
+            f"📝 Чтобы активировать скидку — напишите в Тех.Поддержку!"
         )
     
     await callback.answer()
