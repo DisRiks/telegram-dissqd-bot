@@ -2053,26 +2053,24 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     
     set_user_last_click(user_id, current_time)
     
-    # Считаем клики
     click_count = get_user_click_count(user_id) + 1
     set_user_click_count(user_id, click_count)
     
-    # Рандомное количество от 0.1 до 10
     amount = round(random.uniform(0.1, 10), 1)
+    luck_msg = ""
+    
+    # Каждые 10 кликов даёт +10 Dis удача
+    if click_count % 10 == 0:
+        amount += 10
+        luck_msg = "🍀 Удача! +10 Dis!\n"
+    
     balance = get_user_balance(user_id) + amount
     set_user_balance(user_id, balance)
-    
-    luck_emoji = "🍀" if amount >= 5 else "💰"
-    bonus_msg = ""
-    
-    # Бонус доступен каждые 10 кликов
-    if click_count % 10 == 0:
-        bonus_msg = "\n\n🎁 Бонус доступен!"
     
     progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
     
     await callback.message.answer(
-        f"{luck_emoji} +{amount} Dis!\n{bonus_msg}\n\n"
+        f"{luck_msg}💰 +{amount:.1f} Dis!\n\n"
         f"💰 Баланс: {balance:.1f} Dis\n"
         f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
     )
@@ -2085,11 +2083,6 @@ async def click_bonus_handler(callback: CallbackQuery, bot: Bot) -> None:
     import time
     import random
     current_time = time.time()
-    
-    click_count = get_user_click_count(user_id)
-    if click_count < 10:
-        await callback.answer(f"⏳ Сделай ещё {10 - click_count} кликов!", show_alert=True)
-        return
     
     last_bonus = get_user_last_bonus(user_id)
     if current_time - last_bonus < BONUS_COOLDOWN_SECONDS:
