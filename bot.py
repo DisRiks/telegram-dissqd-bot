@@ -1883,7 +1883,7 @@ async def handle_admin_support_reply(message: Message, bot: Bot) -> bool:
     return True
 
 
-@dp.message()
+@dp.message(F.text & ~F.text.startswith("/"))
 async def user_message_handler(message: Message, bot: Bot) -> None:
     user_id = message.from_user.id
 
