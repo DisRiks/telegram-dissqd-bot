@@ -312,6 +312,7 @@ init_clicker_db()
 
 DIS_COOLDOWN_SECONDS = 2
 DIS_PER_CLICK = 0.1
+DIS_LUCK_MAX = 10
 DIS_TO_DISCOUNT = 1000
 DISCOUNT_PERCENT = 10
 
@@ -2018,6 +2019,35 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     
     await callback.message.answer(
         f"✅ +{DIS_PER_CLICK} Dis!\n\n"
+        f"💰 Баланс: {balance:.1f} Dis\n"
+        f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "click_luck")
+async def click_luck_handler(callback: CallbackQuery, bot: Bot) -> None:
+    user_id = callback.from_user.id
+    import time
+    import random
+    current_time = time.time()
+    
+    last_click = get_user_last_click(user_id)
+    if current_time - last_click < DIS_COOLDOWN_SECONDS:
+        remaining = int(DIS_COOLDOWN_SECONDS - (current_time - last_click))
+        await callback.answer(f"⏳ Подожди {remaining} сек!", show_alert=True)
+        return
+    
+    set_user_last_click(user_id, current_time)
+    luck_amount = round(random.uniform(0.1, DIS_LUCK_MAX), 1)
+    balance = get_user_balance(user_id) + luck_amount
+    set_user_balance(user_id, balance)
+    
+    luck_emoji = "🍀" if luck_amount >= 5 else "🎲"
+    progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
+    
+    await callback.message.answer(
+        f"{luck_emoji} Удача! +{luck_amount} Dis!\n\n"
         f"💰 Баланс: {balance:.1f} Dis\n"
         f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
     )

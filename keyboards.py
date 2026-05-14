@@ -15,7 +15,7 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder.button(text="🆓 Сливы", callback_data="free_builds")
     builder.button(text="Активировать промокод", callback_data="promo_activate")
     builder.button(text="Не нашли нужный вам товар?", callback_data="help_find_product")
-    builder.button(text="🎮 Кликер (Earn Dis)", callback_data="clicker_menu")
+    builder.button(text="🎮 Кликер", callback_data="clicker_menu")
     if is_admin:
         builder.button(text="🎫 Активные запросы", callback_data="admin_support_requests")
         builder.button(text="🔒 Приватный режим", callback_data="admin_privacy_toggle")
@@ -28,10 +28,11 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
 def clicker_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="🔨 Заработать Dis", callback_data="click_earn")
+    builder.button(text="🎲 Удача (до 10 Dis)", callback_data="click_luck")
     builder.button(text="💰 Баланс", callback_data="click_balance")
     builder.button(text="🎁 Обменять на скидку", callback_data="click_exchange")
     builder.button(text="🔙 Назад", callback_data="back_to_main")
-    builder.adjust(1, 1, 1)
+    builder.adjust(1, 1, 1, 1)
     return builder.as_markup()
 
 
