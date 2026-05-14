@@ -256,8 +256,13 @@ def init_clicker_db():
         CREATE TABLE IF NOT EXISTS clicker_data (
             user_id INTEGER PRIMARY KEY,
             balance REAL DEFAULT 0,
-            last_click REAL DEFAULT 0
+            last_click REAL DEFAULT 0,
+            last_bonus REAL DEFAULT 0
         )
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO clicker_data (user_id, last_bonus) 
+        SELECT user_id, 0 FROM clicker_data WHERE last_bonus IS NULL
     """)
     conn.commit()
     conn.close()
@@ -300,6 +305,26 @@ def set_user_last_click(user_id: int, last_click: float):
     conn.commit()
     conn.close()
 
+def get_user_last_bonus(user_id: int) -> float:
+    import time
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_bonus FROM clicker_data WHERE user_id = ?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+def set_user_last_bonus(user_id: int, last_bonus: float):
+    import time
+    conn = sqlite3.connect(CLICKER_DB)
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO clicker_data (user_id, last_bonus) VALUES (?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET last_bonus = ?
+    """, (user_id, last_bonus, last_bonus))
+    conn.commit()
+    conn.close()
+
 def get_all_users_balance() -> list:
     conn = sqlite3.connect(CLICKER_DB)
     cursor = conn.cursor()
@@ -312,9 +337,9 @@ init_clicker_db()
 
 DIS_COOLDOWN_SECONDS = 2
 DIS_PER_CLICK = 0.1
-DIS_LUCK_MAX = 10
 DIS_TO_DISCOUNT = 1000
 DISCOUNT_PERCENT = 10
+BONUS_COOLDOWN_SECONDS = 172800  # 2 дня
 
 
 def privacy_middleware(handler, event):
@@ -1990,10 +2015,10 @@ async def main() -> None:
 @dp.callback_query(F.data == "clicker_menu")
 async def clicker_menu_handler(callback: CallbackQuery) -> None:
     await callback.message.answer(
-        "🎮 Магазин Dis\n\n"
-        "Зарабатывай Dis нажимая кнопку!\n"
-        "1 нажатие = 0.1 Dis\n\n"
-        "💰 1000 Dis = скидка 10% на любой товар",
+        "🎮 Кликер\n\n"
+        "🔨 Заработать — от 0.1 до 10 Dis (кулдаун 2 сек)\n"
+        "🎁 Бонус — до 100 Dis (раз в 2 дня)\n\n"
+        "💰 1000 Dis = скидка 10%",
         reply_markup=clicker_menu()
     )
     await callback.answer()
@@ -2001,32 +2026,6 @@ async def clicker_menu_handler(callback: CallbackQuery) -> None:
 
 @dp.callback_query(F.data == "click_earn")
 async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
-    user_id = callback.from_user.id
-    import time
-    current_time = time.time()
-    
-    last_click = get_user_last_click(user_id)
-    if current_time - last_click < DIS_COOLDOWN_SECONDS:
-        remaining = int(DIS_COOLDOWN_SECONDS - (current_time - last_click))
-        await callback.answer(f"⏳ Подожди {remaining} сек!", show_alert=True)
-        return
-    
-    set_user_last_click(user_id, current_time)
-    balance = get_user_balance(user_id) + DIS_PER_CLICK
-    set_user_balance(user_id, balance)
-    
-    progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
-    
-    await callback.message.answer(
-        f"✅ +{DIS_PER_CLICK} Dis!\n\n"
-        f"💰 Баланс: {balance:.1f} Dis\n"
-        f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
-    )
-    await callback.answer()
-
-
-@dp.callback_query(F.data == "click_luck")
-async def click_luck_handler(callback: CallbackQuery, bot: Bot) -> None:
     user_id = callback.from_user.id
     import time
     import random
@@ -2039,15 +2038,50 @@ async def click_luck_handler(callback: CallbackQuery, bot: Bot) -> None:
         return
     
     set_user_last_click(user_id, current_time)
-    luck_amount = round(random.uniform(0.1, DIS_LUCK_MAX), 1)
-    balance = get_user_balance(user_id) + luck_amount
+    
+    # Рандомное количество от 0.1 до 10
+    amount = round(random.uniform(0.1, 10), 1)
+    balance = get_user_balance(user_id) + amount
     set_user_balance(user_id, balance)
     
-    luck_emoji = "🍀" if luck_amount >= 5 else "🎲"
+    luck_emoji = "🍀" if amount >= 5 else "💰"
     progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
     
     await callback.message.answer(
-        f"{luck_emoji} Удача! +{luck_amount} Dis!\n\n"
+        f"{luck_emoji} +{amount} Dis!\n\n"
+        f"💰 Баланс: {balance:.1f} Dis\n"
+        f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "click_bonus")
+async def click_bonus_handler(callback: CallbackQuery, bot: Bot) -> None:
+    user_id = callback.from_user.id
+    import time
+    import random
+    current_time = time.time()
+    
+    last_bonus = get_user_last_bonus(user_id)
+    if current_time - last_bonus < BONUS_COOLDOWN_SECONDS:
+        remaining = BONUS_COOLDOWN_SECONDS - (current_time - last_bonus)
+        hours = int(remaining // 3600)
+        minutes = int((remaining % 3600) // 60)
+        await callback.answer(f"⏳ Бонус через {hours}ч {minutes}мин", show_alert=True)
+        return
+    
+    set_user_last_bonus(user_id, current_time)
+    
+    # Рандомное количество от 10 до 100
+    amount = round(random.uniform(10, 100), 1)
+    balance = get_user_balance(user_id) + amount
+    set_user_balance(user_id, balance)
+    
+    luck_emoji = "🎁🎁🎁" if amount >= 50 else "🎁"
+    progress = min(balance / DIS_TO_DISCOUNT * 100, 100)
+    
+    await callback.message.answer(
+        f"{luck_emoji} БОНУС! +{amount} Dis!\n\n"
         f"💰 Баланс: {balance:.1f} Dis\n"
         f"📊 Прогресс: {progress:.1f}% ({balance:.1f}/{DIS_TO_DISCOUNT})"
     )

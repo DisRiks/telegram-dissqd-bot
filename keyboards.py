@@ -28,7 +28,7 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
 def clicker_menu() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="🔨 Заработать Dis", callback_data="click_earn")
-    builder.button(text="🎲 Удача (до 10 Dis)", callback_data="click_luck")
+    builder.button(text="🎁 Бонус (до 100 Dis)", callback_data="click_bonus")
     builder.button(text="💰 Баланс", callback_data="click_balance")
     builder.button(text="🎁 Обменять на скидку", callback_data="click_exchange")
     builder.button(text="🔙 Назад", callback_data="back_to_main")
