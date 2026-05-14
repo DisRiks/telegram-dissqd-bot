@@ -2056,13 +2056,14 @@ async def click_earn_handler(callback: CallbackQuery, bot: Bot) -> None:
     click_count = get_user_click_count(user_id) + 1
     set_user_click_count(user_id, click_count)
     
-    amount = round(random.uniform(0.1, 10), 1)
+    amount = DIS_PER_CLICK
     luck_msg = ""
     
-    # Каждые 10 кликов даёт +10 Dis удача
+    # Каждые 10 кликов даёт удачу 0.2-10 Dis
     if click_count % 10 == 0:
-        amount += 10
-        luck_msg = "🍀 Удача! +10 Dis!\n"
+        luck_amount = round(random.uniform(0.2, 10), 1)
+        amount += luck_amount
+        luck_msg = f"🍀 Удача! +{luck_amount} Dis!\n"
     
     balance = get_user_balance(user_id) + amount
     set_user_balance(user_id, balance)
@@ -2094,8 +2095,8 @@ async def click_bonus_handler(callback: CallbackQuery, bot: Bot) -> None:
     
     set_user_last_bonus(user_id, current_time)
     
-    # Рандомное количество от 10 до 100
-    amount = round(random.uniform(10, 100), 1)
+    # Рандомное количество от 0.1 до 100
+    amount = round(random.uniform(0.1, 100), 1)
     balance = get_user_balance(user_id) + amount
     set_user_balance(user_id, balance)
     
