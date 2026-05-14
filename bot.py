@@ -1892,17 +1892,10 @@ async def user_message_handler(message: Message, bot: Bot) -> None:
         return
 
     # Check subscription first - block all usage if not subscribed
-    if message.text and message.text.startswith("/start"):
-        # /start handler will deal with it
-        pass
-    else:
-        not_subscribed, errors = await check_subscription(user_id, bot)
-        if not_subscribed:
-            await send_subscription_prompt(message, bot, not_subscribed, errors)
-            return
-    # Сохраняем username для поиска
-    if message.from_user.username:
-        USERNAME_TO_ID[message.from_user.username.lower()] = message.from_user.id
+    not_subscribed, errors = await check_subscription(user_id, bot)
+    if not_subscribed:
+        await send_subscription_prompt(message, bot, not_subscribed, errors)
+        return
     # Промокод: первая часть активации через администратора
     if user_id in PROMO_DRAFTS:
         draft = PROMO_DRAFTS[user_id]
