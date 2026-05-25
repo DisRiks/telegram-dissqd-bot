@@ -33,6 +33,8 @@ class Settings:
     leak_lobby_build_url: str | None
     paid_grief_build_url: str | None
     paid_grief_build_password: str | None
+    paid_full_build_url: str | None
+    paid_full_build_password: str | None
     support_admin_id: int
     paid_grief_build_path: Path
     paid_full_build_path: Path
@@ -58,11 +60,19 @@ def load_settings() -> Settings:
     paid_grief_build_url = (
         os.getenv(
             "PAID_GRIEF_BUILD_URL",
-            "https://workupload.com/file/xETzkBtGKt3",
+            "https://workupload.com/file/CqEJ4zVxcES",
         ).strip()
         or None
     )
-    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "DISSQDSB25").strip() or None
+    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "RWGRIEFDISSQD").strip() or None
+    paid_full_build_url = (
+        os.getenv(
+            "PAID_FULL_BUILD_URL",
+            "https://workupload.com/file/Akh2Rt7TqbJ",
+        ).strip()
+        or None
+    )
+    paid_full_build_password = os.getenv("PAID_FULL_BUILD_PASSWORD", "DISSQDFULL").strip() or None
     support_admin_id = int(os.getenv("SUPPORT_ADMIN_ID", "6517766247").strip())
 
     paid_grief_build_raw = os.getenv("PAID_GRIEF_BUILD_PATH", "paid/reallyworld-grief.zip").strip()
@@ -76,6 +86,8 @@ def load_settings() -> Settings:
         leak_lobby_build_url=leak_lobby_build_url,
         paid_grief_build_url=paid_grief_build_url,
         paid_grief_build_password=paid_grief_build_password,
+        paid_full_build_url=paid_full_build_url,
+        paid_full_build_password=paid_full_build_password,
         support_admin_id=support_admin_id,
         paid_grief_build_path=(BASE_DIR / paid_grief_build_raw).resolve(),
         paid_full_build_path=(BASE_DIR / paid_full_build_raw).resolve(),

@@ -1180,6 +1180,24 @@ async def deliver_paid_file(bot: Bot, request: PaymentRequest) -> None:
         )
         return
 
+    if request.item_key == "build_reallyworld_full" and settings.paid_full_build_url:
+        password_text = (
+            f"\n\nПароль: <code>{settings.paid_full_build_password}</code>"
+            if settings.paid_full_build_password
+            else ""
+        )
+        await bot.send_message(
+            request.user_id,
+            (
+                f"Оплата найдена. Ваш товар: {request.item_title}.{password_text}\n\n"
+                "Если ссылка не открывается или файл нужен на другом файлообменнике, "
+                "напишите в Тех.Поддержку."
+            ),
+            reply_markup=download_link_menu(settings.paid_full_build_url),
+            parse_mode="HTML",
+        )
+        return
+
     paid_file_path = get_paid_file_path(request.item_key)
     if paid_file_path and paid_file_path.exists():
         await bot.send_document(
