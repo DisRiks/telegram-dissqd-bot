@@ -38,6 +38,7 @@ from keyboards import (
     start_menu,
     support_request_menu,
     leak_resourcepack_variants_menu,
+    promo_activate_menu,
 )
 
 
@@ -686,7 +687,7 @@ async def promo_create_flat_cmd(message: Message) -> None:
 async def promo_activate_handler(callback: CallbackQuery) -> None:
     log_user_activity(callback, "activate_promo_prompt")
     PROMO_DRAFTS[callback.from_user.id] = PendingPromoDraft()
-    await callback.message.answer("Введите промокод для активации:")
+    await callback.message.answer("Введите промокод для активации:", reply_markup=promo_activate_menu())
     await callback.answer()
 
 

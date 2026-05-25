@@ -6,6 +6,12 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from catalog import LEAK_RESOURCEPACK_VARIANTS, BUILD_VARIANTS, LEAK_BUILD_VARIANTS, LEAK_MAP_VARIANTS, LEAK_PLUGIN_VARIANTS, LEAK_VARIANTS, OTHER_VARIANTS
 
 
+def promo_activate_menu() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔙 Назад", callback_data="back_to_main")
+    return builder.as_markup()
+
+
 def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text="🛒 Купить сборку", callback_data="buy_build")
