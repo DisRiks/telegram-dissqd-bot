@@ -1920,7 +1920,7 @@ async def user_message_handler(message: Message, bot: Bot) -> None:
                 return
             promo = PROMO_CODES.get(code)
             if not promo:
-                await message.answer("Неверный промокод. Попробуйте ещё раз или отмените.")
+                await message.answer("Неверный промокод. Попробуйте ещё раз или отмените.", reply_markup=promo_activate_menu())
                 return
             # Проверяем, нет ли уже активного промокода
             existing = USER_PROMOS.get(user_id)
