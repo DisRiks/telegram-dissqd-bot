@@ -18,7 +18,6 @@ def start_menu(is_admin: bool = False) -> InlineKeyboardMarkup:
     builder.button(text="📁 Прочее", callback_data="other")
     builder.button(text="🛠 Тех.Поддержка", callback_data="support")
     builder.button(text="⭐ Поддержать сливы (15 ⭐)", callback_data="boost")
-    builder.button(text="🆓 Сливы", callback_data="free_builds")
     builder.button(text="Активировать промокод", callback_data="promo_activate")
     builder.button(text="Не нашли нужный вам товар?", callback_data="help_find_product")
     builder.button(text="🎮 Кликер", callback_data="clicker_menu")
