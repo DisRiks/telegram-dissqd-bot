@@ -930,23 +930,18 @@ async def send_paid_item_card(callback: CallbackQuery, item_key: str) -> None:
         return
     image_path = ASSETS_DIR / item.image_name if item.image_name else None
 
-    if item_key in ("build_reallyworld_grief", "build_reallyworld_full"):
-        kb = None
-    else:
-        kb = ready_to_pay_menu(item.callback_data, item.funpay_url)
-
     if image_path and image_path.exists():
         await callback.message.answer_photo(
             photo=FSInputFile(image_path),
             caption=item.caption,
-            reply_markup=kb,
+            reply_markup=ready_to_pay_menu(item.callback_data, item.funpay_url),
             parse_mode="HTML",
             protect_content=True,
         )
     else:
         await callback.message.answer(
             item.caption,
-            reply_markup=kb,
+            reply_markup=ready_to_pay_menu(item.callback_data, item.funpay_url),
             parse_mode="HTML",
         )
     await callback.answer()
