@@ -66,8 +66,8 @@ BUILD_VARIANTS: tuple[BuildVariant, ...] = (
         title="REALLYWORLD GRIEF",
         callback_data="build_reallyworld_grief",
         caption=(
-            "Сборка ReallyWorld GRIEF ( Май )\n\n"
-            "Стоимость данной сборки <s>150</s> 125 ₽ ( с учётом скидки )"
+            "Сборка ReallyWorld GRIEF ( ЛЕТНЯЯ )\n\n"
+            "Стоимость данной сборки <s>200</s> 175 ₽ ( с учётом скидки )"
         ),
         funpay_url="https://funpay.com/lots/offer?id=67418853",
         image_name="RWSBORKA.png",
@@ -77,8 +77,8 @@ BUILD_VARIANTS: tuple[BuildVariant, ...] = (
         title="REALLYWORLD FULL",
         callback_data="build_reallyworld_full",
         caption=(
-            "Сборка ReallyWorld FULL ( Май )\n\n"
-            "Стоимость данной сборки 200 ₽"
+            "Сборка ReallyWorld FULL ( ЛЕТНЯЯ )\n\n"
+            "Стоимость данной сборки <s>300</s> 275 ₽"
         ),
         funpay_url="https://funpay.com/lots/offer?id=68009619",
         image_name="RWSBORKA.png",
