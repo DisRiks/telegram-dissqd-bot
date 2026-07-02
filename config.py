@@ -60,15 +60,15 @@ def load_settings() -> Settings:
     paid_grief_build_url = (
         os.getenv(
             "PAID_GRIEF_BUILD_URL",
-            "https://workupload.com/file/fv8kvAjyarM",
+            "https://workupload.com/file/BRyLyqTESph",
         ).strip()
         or None
     )
-    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "letofulldissqdsb").strip() or None
+    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "SBORKARWDISLETO").strip() or None
     paid_full_build_url = (
         os.getenv(
             "PAID_FULL_BUILD_URL",
-            "https://workupload.com/file/fv8kvAjyarM",
+            "https://workupload.com/file/kjHwRk2mByh",
         ).strip()
         or None
     )
