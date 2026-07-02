@@ -60,19 +60,19 @@ def load_settings() -> Settings:
     paid_grief_build_url = (
         os.getenv(
             "PAID_GRIEF_BUILD_URL",
-            "https://workupload.com/file/vUnFpZGuKQ6",
+            "https://workupload.com/file/fv8kvAjyarM",
         ).strip()
         or None
     )
-    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "RWGRIEFDISLETO").strip() or None
+    paid_grief_build_password = os.getenv("PAID_GRIEF_BUILD_PASSWORD", "letofulldissqdsb").strip() or None
     paid_full_build_url = (
         os.getenv(
             "PAID_FULL_BUILD_URL",
-            "https://workupload.com/file/qWLYrvtngyR",
+            "https://workupload.com/file/fv8kvAjyarM",
         ).strip()
         or None
     )
-    paid_full_build_password = os.getenv("PAID_FULL_BUILD_PASSWORD", "RWDISSQDLETO").strip() or None
+    paid_full_build_password = os.getenv("PAID_FULL_BUILD_PASSWORD", "SBORKARWDISLETO").strip() or None
     support_admin_id = int(os.getenv("SUPPORT_ADMIN_ID", "6517766247").strip())
 
     paid_grief_build_raw = os.getenv("PAID_GRIEF_BUILD_PATH", "paid/reallyworld-grief.zip").strip()
